@@ -1,19 +1,35 @@
 require 'pry-byebug'
 
-class TicTacToeGame
-  def initialize(*players)
-    @player1, @player2 = players
-    @board = Array.new(3) { Array.new(3, '   ') }
+module TicTacToe
+  def self.run
+    puts 'Start a new game? Y/N'
+    unless /yes|y/i =~ gets.chomp
+      puts 'Okay, bye!'
+      return
+    end
+
+    player1 = self::Player.new(1)
+    player2 = self::Player.new(2)
+    game = self::Game.new(player1, player2)
+    game.display_game
   end
 
-  def display_game
-    puts board
-  end
+  class Game
+    def initialize(*players)
+      @player1, @player2 = players
+      @board = Array.new(3) { Array.new(3, '   ') }
+    end
 
-  private
+    def display_game
+      # TODO: display Player: {name} ({marker}) along with board
+      puts board
+    end
 
-  def board
-    @board.map { |row| row.join('|') }.join("\r\n#{'-' * 11}\r\n")
+    private
+
+    def board
+      @board.map { |row| row.join('|') }.join("\r\n#{'-' * 11}\r\n")
+    end
   end
 
   class Player
@@ -26,7 +42,4 @@ class TicTacToeGame
   end
 end
 
-player1 = TicTacToeGame::Player.new(1)
-player2 = TicTacToeGame::Player.new(2)
-game = TicTacToeGame.new(player1, player2)
-game.display_game
+TicTacToe.run
