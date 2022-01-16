@@ -16,23 +16,28 @@ module TicTacToe
   class Game
     def initialize(players)
       @players = players
-      @board = Array.new(3) { Array.new(3, '   ') }
+      @board = Array.new(3) { |row| Array.new(3) { |col| " #{row * 3 + col + 1} "} }
     end
 
     def display_game
-      puts board_with_players
+      puts display
     end
 
     private
 
-    def board_with_players
-      @displayed_board = @board.map { |row| row.join('|') }
-      2.times { |i| @displayed_board.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + players[i]) }
-      @displayed_board
+    def board
+      @board.map { |row| row.join('|') }
     end
 
     def players
       @players.map { |player| "Player #{player.number}: #{player.name} (#{player.marker})" }
+    end
+
+    def display
+      @display = board
+      2.times { |i| @display.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + players[i]) }
+      @display.map! { |row| ' ' * 10 + row }
+      "\r\n#{@display.join("\r\n")}\r\n"
     end
   end
 
