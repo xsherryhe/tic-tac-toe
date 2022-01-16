@@ -8,31 +8,37 @@ module TicTacToe
       return
     end
 
-    player1 = self::Player.new(1)
-    player2 = self::Player.new(2)
-    game = self::Game.new(player1, player2)
+    players = [1, 2].map { |number| self::Player.new(number) }
+    game = self::Game.new(players)
     game.display_game
   end
 
   class Game
-    def initialize(*players)
-      @player1, @player2 = players
+    def initialize(players)
+      @players = players
       @board = Array.new(3) { Array.new(3, '   ') }
     end
 
     def display_game
-      # TODO: display Player: {name} ({marker}) along with board
-      puts board
+      puts board_with_players
     end
 
     private
 
-    def board
-      @board.map { |row| row.join('|') }.join("\r\n#{'-' * 11}\r\n")
+    def board_with_players
+      @displayed_board = @board.map { |row| row.join('|') }
+      2.times { |i| @displayed_board.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + players[i]) }
+      @displayed_board
+    end
+
+    def players
+      @players.map { |player| "Player #{player.number}: #{player.name} (#{player.marker})" }
     end
   end
 
   class Player
+    attr_reader :name, :marker, :number
+
     def initialize(number)
       @number = number
       @marker = %w[X O][number - 1]
