@@ -2,20 +2,58 @@ require 'pry-byebug'
 
 module TicTacToe
   def self.run
-    puts 'Start a new game? Y/N'
-    unless /yes|y/i =~ gets.chomp
-      puts 'Okay, bye!'
-      return
+    loop do
+      puts 'Start a new game? Y/N'
+      unless /yes|y/i =~ gets.chomp
+        puts 'Okay, bye!'
+        break
+      end
+
+      players = [1, 2].map { |number| self::Player.new(number) }
+      game = self::Game.new(players)
+      game.play
+    end
+  end
+
+  module WinCondition
+    def evaluate_win
+      winning_configuration = [board, board.transpose, diagonals]
+                              .find { |configuration| win_index(configuration) }
+      return unless winning_configuration
+
+      winning_marker = winning_configuration[win_index(winning_configuration)][0][1]
+      winning_player = players.find { |player| player.marker == winning_marker }
+      puts "#{winning_player.name} has won the game!"
+      @game_over = true
     end
 
-    players = [1, 2].map { |number| self::Player.new(number) }
-    game = self::Game.new(players)
-    game.play
-    game.display_game
+    private
+
+    def win_index(configuration)
+      configuration.index { |row| row.all? { |square| square == row[0] } }
+    end
+
+    def diagonals
+      board.map.with_index { |row, i| [row[i], row[2 - i]] }.transpose
+    end
+  end
+
+  class Player
+    attr_reader :name, :marker, :number
+
+    def initialize(number)
+      @number = number
+      @marker = %w[X O][number - 1]
+      puts "Enter the name of Player #{@number} (#{@marker})."
+      @name = gets.chomp
+    end
   end
 
   class Game
     # TODO: separate board into its own class??
+    include TicTacToe::WinCondition
+    attr_reader :players, :board
+
     NEXT_PLAYER_INDEX = [1, 0].freeze
     def initialize(players)
       @players = players
@@ -26,36 +64,35 @@ module TicTacToe
     end
 
     def play
-      take_turn until @game_over
-    end
-
-    def display_game
-      puts display
+      until @game_over
+        take_turn
+        evaluate_win
+      end
     end
 
     private
 
-    def board
-      @board.map { |row| row.join('|') }
+    def displayed_board
+      board.map { |row| row.join('|') }
     end
 
-    def players
-      @players.map { |player| "Player #{player.number}: #{player.name} (#{player.marker})" }
+    def displayed_players
+      players.map { |player| "Player #{player.number}: #{player.name} (#{player.marker})" }
     end
 
     def display
-      @display = board
-      2.times { |i| @display.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + players[i]) }
-      @display.map! { |row| ' ' * 10 + row }
-      "\r\n#{@display.join("\r\n")}\r\n"
+      display = displayed_board
+      2.times { |i| display.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + displayed_players[i]) }
+      display.map! { |row| ' ' * 10 + row }
+      "\r\n#{display.join("\r\n")}\r\n"
     end
 
     def current_player
-      @players[@current_player_index]
+      players[@current_player_index]
     end
 
     def instruction
-      "\r\n#{current_player.name}, please type a number to mark the square."
+      "\r\n#{current_player.name}, please type a number to mark the square.\r\n"
     end
 
     def select_square
@@ -80,22 +117,6 @@ module TicTacToe
       puts instruction + display
       update_board
       @current_player_index = NEXT_PLAYER_INDEX[@current_player_index]
-      evaluate_win
-    end
-
-    def evaluate_win
-      # TODO: evaluate when to end the game
-    end
-  end
-
-  class Player
-    attr_reader :name, :marker, :number
-
-    def initialize(number)
-      @number = number
-      @marker = %w[X O][number - 1]
-      puts "Enter the name of Player #{@number} (#{@marker})."
-      @name = gets.chomp
     end
   end
 end
