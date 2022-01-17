@@ -1,11 +1,16 @@
 require 'pry-byebug'
+class String
+  def bold
+    "\033[1m#{self}\033[0m"
+  end
+end
 
 module TicTacToe
   def self.run
     loop do
-      puts 'Start a new game? Y/N'
+      puts 'Start a new game? Y/N'.bold
       unless /yes|y/i =~ gets.chomp
-        puts 'Okay, bye!'
+        puts 'Okay, bye!'.bold
         break
       end
 
@@ -15,19 +20,19 @@ module TicTacToe
     end
   end
 
-  module WinCondition
-    def evaluate_win
-      winning_configuration = [board, board.transpose, diagonals]
-                              .find { |configuration| win_index(configuration) }
-      return unless winning_configuration
-
-      winning_marker = winning_configuration[win_index(winning_configuration)][0][1]
-      winning_player = players.find { |player| player.marker == winning_marker }
-      puts "#{winning_player.name} has won the game!"
-      @game_over = true
+  module GameOverConditions
+    def evaluate_game_over
+      self.game_over = evaluate_tie || evaluate_win
     end
 
     private
+
+    def evaluate_tie
+      return unless board.all? { |row| row.none? { |square| /\d/ =~ square } }
+
+      puts "#{players.map(&:name).join(' and ')} have tied.".bold
+      true
+    end
 
     def win_index(configuration)
       configuration.index { |row| row.all? { |square| square == row[0] } }
@@ -35,6 +40,20 @@ module TicTacToe
 
     def diagonals
       board.map.with_index { |row, i| [row[i], row[2 - i]] }.transpose
+    end
+
+    def winning_configuration
+      [board, board.transpose, diagonals]
+        .find { |configuration| win_index(configuration) }
+    end
+
+    def evaluate_win
+      win = winning_configuration
+      return unless win
+
+      winning_player = players.find { |player| player.marker == win[win_index(win)][0][1] }
+      puts "#{winning_player.name} has won the game!".bold
+      true
     end
   end
 
@@ -44,15 +63,16 @@ module TicTacToe
     def initialize(number)
       @number = number
       @marker = %w[X O][number - 1]
-      puts "Enter the name of Player #{@number} (#{@marker})."
+      puts "Enter the name of Player #{@number} (#{@marker}).".bold
       @name = gets.chomp
     end
   end
 
   class Game
     # TODO: separate board into its own class??
-    include TicTacToe::WinCondition
+    include TicTacToe::GameOverConditions
     attr_reader :players, :board
+    attr_writer :game_over
 
     NEXT_PLAYER_INDEX = [1, 0].freeze
     def initialize(players)
@@ -60,13 +80,12 @@ module TicTacToe
       @board = Array.new(3) { |row| Array.new(3) { |col| " #{row * 3 + col + 1} " } }
       @current_player_index = 0
       @occupied_squares = []
-      @game_over = false
     end
 
     def play
       until @game_over
         take_turn
-        evaluate_win
+        evaluate_game_over
       end
     end
 
@@ -92,7 +111,7 @@ module TicTacToe
     end
 
     def instruction
-      "\r\n#{current_player.name}, please type a number to mark the square.\r\n"
+      "\r\n#{current_player.name}, please type a number to mark the square.\r\n".bold
     end
 
     def select_square
