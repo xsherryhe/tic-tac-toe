@@ -1,7 +1,10 @@
-require 'pry-byebug'
 class String
   def bold
     "\033[1m#{self}\033[0m"
+  end
+
+  def separate_line
+    "\r\n#{self}\r\n"
   end
 end
 
@@ -14,25 +17,17 @@ module TicTacToe
         break
       end
 
-      players = [1, 2].map { |number| self::Player.new(number) }
-      game = self::Game.new(players)
+      game = self::Game.new
       game.play
     end
   end
 
   module GameOverConditions
     def evaluate_game_over
-      self.game_over = evaluate_tie || evaluate_win
+      self.game_over = evaluate_win || evaluate_tie
     end
 
     private
-
-    def evaluate_tie
-      return unless board.all? { |row| row.none? { |square| /\d/ =~ square } }
-
-      puts "#{players.map(&:name).join(' and ')} have tied.".bold
-      true
-    end
 
     def win_index(configuration)
       configuration.index { |row| row.all? { |square| square == row[0] } }
@@ -55,6 +50,13 @@ module TicTacToe
       puts "#{winning_player.name} has won the game!".bold
       true
     end
+
+    def evaluate_tie
+      return unless board.all? { |row| row.none? { |square| /\d/ =~ square } }
+
+      puts "#{players.map(&:name).join(' and ')} have tied.".bold
+      true
+    end
   end
 
   class Player
@@ -66,53 +68,29 @@ module TicTacToe
       puts "Enter the name of Player #{@number} (#{@marker}).".bold
       @name = gets.chomp
     end
+
+    def to_s
+      "Player #{number}: #{name} (#{marker})"
+    end
   end
 
-  class Game
-    # TODO: separate board into its own class??
-    include TicTacToe::GameOverConditions
-    attr_reader :players, :board
-    attr_writer :game_over
-
-    NEXT_PLAYER_INDEX = [1, 0].freeze
-    def initialize(players)
-      @players = players
-      @board = Array.new(3) { |row| Array.new(3) { |col| " #{row * 3 + col + 1} " } }
-      @current_player_index = 0
+  class Board < Array
+    def initialize
+      super(3) { |row| Array.new(3) { |col| " #{row * 3 + col + 1} " } }
       @occupied_squares = []
     end
 
-    def play
-      until @game_over
-        take_turn
-        evaluate_game_over
-      end
+    def rows
+      map { |row| row.join('|') }
+    end
+
+    def fill_square(marker)
+      select_square
+      self[(@selected_square / 3.0).ceil - 1][(@selected_square - 1) % 3] =
+        " #{marker} "
     end
 
     private
-
-    def displayed_board
-      board.map { |row| row.join('|') }
-    end
-
-    def displayed_players
-      players.map { |player| "Player #{player.number}: #{player.name} (#{player.marker})" }
-    end
-
-    def display
-      display = displayed_board
-      2.times { |i| display.insert(i * 2 + 1, '-' * 11 + ' ' * 10 + displayed_players[i]) }
-      display.map! { |row| ' ' * 10 + row }
-      "\r\n#{display.join("\r\n")}\r\n"
-    end
-
-    def current_player
-      players[@current_player_index]
-    end
-
-    def instruction
-      "\r\n#{current_player.name}, please type a number to mark the square.\r\n".bold
-    end
 
     def select_square
       @selected_square = gets.chomp.to_i
@@ -125,16 +103,42 @@ module TicTacToe
       end
       @occupied_squares << @selected_square
     end
+  end
 
-    def update_board
-      select_square
-      @board[(@selected_square / 3.0).ceil - 1][(@selected_square - 1) % 3] =
-        " #{current_player.marker} "
+  class Game
+    include TicTacToe::GameOverConditions
+    attr_reader :players, :board
+    attr_writer :game_over
+
+    NEXT_PLAYER_INDEX = [1, 0].freeze
+    def initialize
+      @players = [1, 2].map { |number| TicTacToe::Player.new(number) }
+      @board = TicTacToe::Board.new
+      @current_player_index = 0
     end
 
+    def play
+      until @game_over
+        take_turn
+        evaluate_game_over
+      end
+    end
+
+    def to_s
+      display = board.rows
+      spacing = ' ' * 10
+      2.times { |i| display.insert(i * 2 + 1, "#{'-' * 11}#{spacing}#{players[i]}") }
+      display.map! { |row| "#{spacing}#{row}" }
+      display.join("\r\n").separate_line
+    end
+
+    private
+
     def take_turn
-      puts instruction + display
-      update_board
+      current_player = players[@current_player_index]
+      puts "#{current_player.name}, please type a number to mark the square.".separate_line.bold
+      puts self
+      board.fill_square(current_player.marker)
       @current_player_index = NEXT_PLAYER_INDEX[@current_player_index]
     end
   end
