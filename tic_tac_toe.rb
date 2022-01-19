@@ -4,14 +4,14 @@ class String
   end
 
   def separate_line
-    "\r\n#{self}\r\n"
+    "\r\n#{self}"
   end
 end
 
 module TicTacToe
   def self.run
     loop do
-      puts 'Start a new game? Y/N'.bold
+      puts 'Start a new game? Y/N'.separate_line.bold
       unless /yes|y/i =~ gets.chomp
         puts 'Okay, bye!'.bold
         break
@@ -42,19 +42,23 @@ module TicTacToe
         .find { |configuration| win_index(configuration) }
     end
 
+    def game_end_display(result)
+      "#{result}\r\n#{self}".separate_line.bold
+    end
+
     def evaluate_win
       win = winning_configuration
       return unless win
 
       winning_player = players.find { |player| player.marker == win[win_index(win)][0][1] }
-      puts "#{winning_player.name} has won the game!".bold
+      puts game_end_display("#{winning_player.name} has won the game!")
       true
     end
 
     def evaluate_tie
       return unless board.all? { |row| row.none? { |square| /\d/ =~ square } }
 
-      puts "#{players.map(&:name).join(' and ')} have tied.".bold
+      puts game_end_display("#{players.map(&:name).join(' and ')} have tied.")
       true
     end
   end
@@ -127,7 +131,7 @@ module TicTacToe
     def to_s
       display = board.rows
       spacing = ' ' * 10
-      2.times { |i| display.insert(i * 2 + 1, "#{'-' * 11}#{spacing}#{players[i]}") }
+      2.times { |i| display.insert(i * 2 + 1, "#{(['-' * 3] * 3).join('+')}#{spacing}#{players[i]}") }
       display.map! { |row| "#{spacing}#{row}" }
       display.join("\r\n").separate_line
     end
