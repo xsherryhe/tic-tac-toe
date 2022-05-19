@@ -147,5 +147,3 @@ module TicTacToe
     end
   end
 end
-
-TicTacToe.run
