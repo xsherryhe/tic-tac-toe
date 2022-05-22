@@ -50,7 +50,9 @@ module TicTacToe
       win = winning_configuration
       return unless win
 
-      winning_player = players.find { |player| player.marker == win[win_index(win)][0][1] }
+      winning_player = players.find do |player|
+        player.marker == win[win_index(win)][0][1]
+      end
       puts game_end_display("#{winning_player.name} has won the game!")
       true
     end
@@ -97,15 +99,27 @@ module TicTacToe
     private
 
     def select_square
-      @selected_square = gets.chomp.to_i
-      until @selected_square.between?(1, 9) && !@occupied_squares.include?(@selected_square)
-        if @occupied_squares.include?(@selected_square)
-          puts 'The square you selected has already been occupied. Please type a different number.'
-        end
-        puts 'Please type a number between 1 and 9 to mark the square.' unless @selected_square.between?(1, 9)
-        @selected_square = gets.chomp.to_i
-      end
+      @selected_square = valid_input
       @occupied_squares << @selected_square
+    end
+
+    def valid_input
+      input = gets.chomp.to_i
+      until input.between?(1, 9) && !@occupied_squares.include?(input)
+        display_selected_error if @occupied_squares.include?(input)
+        display_range_error unless input.between?(1, 9)
+        input = gets.chomp.to_i
+      end
+      input
+    end
+
+    def display_selected_error
+      puts 'The square you selected has already been occupied.' \
+           'Please type a different number.'
+    end
+
+    def display_range_error
+      puts 'Please type a number between 1 and 9 to mark the square.'
     end
   end
 
@@ -129,19 +143,28 @@ module TicTacToe
     end
 
     def to_s
-      display = board.rows
-      spacing = ' ' * 10
-      2.times { |i| display.insert(i * 2 + 1, "#{(['-' * 3] * 3).join('+')}#{spacing}#{players[i]}") }
-      display.map! { |row| "#{spacing}#{row}" }
-      display.join("\r\n").separate_line
+      format(board.rows)
     end
 
     def take_turn
       current_player = players[@current_player_index]
-      puts "#{current_player.name}, please type a number to mark the square.".separate_line.bold
+      puts "#{current_player.name}, please type a number to mark the square."
+        .separate_line.bold
       puts self
       board.fill_square(current_player.marker)
       @current_player_index = NEXT_PLAYER_INDEX[@current_player_index]
+    end
+
+    private
+
+    def format(display)
+      spacing = ' ' * 10
+      2.times do |i|
+        display.insert(i * 2 + 1,
+                       "#{(['-' * 3] * 3).join('+')}#{spacing}#{players[i]}")
+      end
+      display.map! { |row| "#{spacing}#{row}" }
+      display.join("\r\n").separate_line
     end
   end
 end
