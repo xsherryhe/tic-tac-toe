@@ -1,12 +1,11 @@
 require_relative '../tic_tac_toe.rb'
 describe TicTacToe::Game do
   subject(:game) { described_class.new }
+  let(:joe) { instance_double(TicTacToe::Player, name: 'Joe', marker: 'X', number: 1) }
+  let(:jane) { instance_double(TicTacToe::Player, name: 'Jane', marker: 'O', number: 2) }
 
   before do
-    allow(TicTacToe::Player)
-      .to receive(:new)
-      .and_return(instance_double(TicTacToe::Player, name: 'Joe', marker: 'X', number: 1),
-                  instance_double(TicTacToe::Player, name: 'Jane', marker: 'O', number: 2))
+    allow(TicTacToe::Player).to receive(:new).and_return(joe, jane)
   end
 
   describe '#initialize' do
@@ -60,6 +59,73 @@ describe TicTacToe::Game do
         expect(game).to receive(:take_turn).twice
         expect(game).to receive(:evaluate_game_over).twice
         game.play
+      end
+    end
+  end
+
+  describe '#take_turn' do
+    let(:board) { instance_double(TicTacToe::Board) }
+
+    before do
+      allow(TicTacToe::Board).to receive(:new).and_return(board)
+      allow(game).to receive(:to_s)
+      allow(game).to receive(:puts)
+      allow(board).to receive(:fill_square)
+    end
+
+    context 'when the X player is the current player' do
+      before do
+        game.instance_variable_set(:@current_player_index, 0)
+      end
+
+      it "retrieves the current player's name and marker" do
+        expect(joe).to receive(:name)
+        expect(joe).to receive(:marker)
+        game.take_turn
+      end
+
+      it 'outputs an instruction to current player' do
+        expect(game).to receive(:puts).with(/Joe, please type a number to mark the square./)
+        game.take_turn
+      end
+
+      it "sends #fill_square message to game board with current player's marker" do
+        expect(board).to receive(:fill_square).with('X')
+        game.take_turn
+      end
+
+      it 'updates @current_player_index' do
+        game.take_turn
+        current_player_index = game.instance_variable_get(:@current_player_index)
+        expect(current_player_index).to eql(1)
+      end
+    end
+
+    context 'when the O player is the current player' do
+      before do
+        game.instance_variable_set(:@current_player_index, 1)
+      end
+
+      it "retrieves the current player's name and marker" do
+        expect(jane).to receive(:name)
+        expect(jane).to receive(:marker)
+        game.take_turn
+      end
+
+      it 'outputs an instruction to current player' do
+        expect(game).to receive(:puts).with(/Jane, please type a number to mark the square./)
+        game.take_turn
+      end
+
+      it "sends #fill_square message to game board with current player's marker" do
+        expect(board).to receive(:fill_square).with('O')
+        game.take_turn
+      end
+
+      it 'updates @current_player_index' do
+        game.take_turn
+        current_player_index = game.instance_variable_get(:@current_player_index)
+        expect(current_player_index).to eql(0)
       end
     end
   end
