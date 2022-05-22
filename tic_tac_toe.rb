@@ -114,7 +114,7 @@ module TicTacToe
     end
 
     def display_selected_error
-      puts 'The square you selected has already been occupied.' \
+      puts 'The square you selected has already been occupied. ' \
            'Please type a different number.'
     end
 
