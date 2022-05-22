@@ -136,8 +136,6 @@ module TicTacToe
       display.join("\r\n").separate_line
     end
 
-    private
-
     def take_turn
       current_player = players[@current_player_index]
       puts "#{current_player.name}, please type a number to mark the square.".separate_line.bold

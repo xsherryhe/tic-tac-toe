@@ -9,6 +9,61 @@ describe TicTacToe::Game do
                   instance_double(TicTacToe::Player, name: 'Jane', marker: 'O', number: 2))
   end
 
+  describe '#initialize' do
+    before do
+      allow(TicTacToe::Board).to receive(:new)
+    end
+
+    it 'initializes two new players' do
+      expect(TicTacToe::Player).to receive(:new).twice
+      game
+    end
+
+    it 'initializes a new board' do
+      expect(TicTacToe::Board).to receive(:new)
+      game
+    end
+  end
+
+  describe '#play' do
+    before do
+      allow(TicTacToe::Board).to receive(:new)
+      allow(game).to receive(:take_turn)
+    end
+
+    context 'when the game is over' do
+      it 'does not execute the loop' do
+        game.game_over = true
+        expect(game).not_to receive(:take_turn)
+        expect(game).not_to receive(:evaluate_game_over)
+        game.play
+      end
+    end
+
+    context 'when the game is over after one turn' do
+      it 'executes the loop once' do
+        allow(game).to receive(:evaluate_game_over) { game.game_over = true }
+        expect(game).to receive(:take_turn).once
+        expect(game).to receive(:evaluate_game_over).once
+        game.play
+      end
+    end
+
+    context 'when the game is over after two turns' do
+      it 'executes the loop twice' do
+        call_count = 0
+        allow(game).to receive(:evaluate_game_over) do
+          call_count += 1
+          game.game_over = true if call_count == 2
+        end
+
+        expect(game).to receive(:take_turn).twice
+        expect(game).to receive(:evaluate_game_over).twice
+        game.play
+      end
+    end
+  end
+
   describe '#evaluate_game_over' do
     context 'when the game is not over' do
       before do
